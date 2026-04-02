@@ -1,16 +1,33 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import ProblemSection from "@/components/ProblemSection";
+import SolutionSection from "@/components/SolutionSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
+import FeaturesSection from "@/components/FeaturesSection";
+import DemoSection from "@/components/DemoSection";
+import AutomationSection from "@/components/AutomationSection";
+import ImpactSection from "@/components/ImpactSection";
+import SDGSection from "@/components/SDGSection";
+import ResponsibleAISection from "@/components/ResponsibleAISection";
+import FutureSection from "@/components/FutureSection";
+import Footer from "@/components/Footer";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
-  return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
-  );
-};
-
-const Index = PlaceholderIndex;
+const Index = () => (
+  <div className="min-h-screen bg-background">
+    <Navbar />
+    <HeroSection />
+    <ProblemSection />
+    <SolutionSection />
+    <HowItWorksSection />
+    <FeaturesSection />
+    <DemoSection />
+    <AutomationSection />
+    <ImpactSection />
+    <SDGSection />
+    <ResponsibleAISection />
+    <FutureSection />
+    <Footer />
+  </div>
+);
 
 export default Index;
