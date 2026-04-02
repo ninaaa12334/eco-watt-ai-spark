@@ -1,24 +1,22 @@
 import SectionWrapper from "./SectionWrapper";
-import { Shield, Eye, UserCheck, Lock, Settings } from "lucide-react";
+import { Shield, UserCheck, Eye, Lock, Camera, FileCheck } from "lucide-react";
 
 const principles = [
-  { icon: Shield, title: "Support & Automation", desc: "The AI acts as a support tool — augmenting decisions, not replacing them." },
-  { icon: UserCheck, title: "User Control", desc: "Users stay in control of all automation and can override any AI decision." },
-  { icon: Eye, title: "Transparent Recommendations", desc: "All suggestions are clear, explainable, and based on transparent logic." },
-  { icon: Lock, title: "Privacy-Conscious", desc: "Minimal data collection with a privacy-first approach to household data." },
-  { icon: Settings, title: "Customizable Automation", desc: "Automation can be manually approved, scheduled, or customized per device." },
+  { icon: Shield, title: "Estimates, Not Perfection", desc: "The system provides estimates and recommendations, not perfect real-time monitoring." },
+  { icon: UserCheck, title: "User Control", desc: "Users stay in control of all decisions and actions." },
+  { icon: Lock, title: "Careful Data Handling", desc: "Data entered is handled carefully with minimal collection." },
+  { icon: Camera, title: "Best-Effort Recognition", desc: "Photo recognition provides best-effort identification — users can review and correct." },
+  { icon: Eye, title: "Transparent AI", desc: "The AI is designed to be practical, transparent, and accessible." },
+  { icon: FileCheck, title: "Supportive, Not Official", desc: "Bill analysis supports users but does not replace official verification." },
 ];
 
 const ResponsibleAISection = () => (
   <SectionWrapper id="responsible-ai">
     <div className="text-center mb-14">
       <span className="text-xs font-semibold uppercase tracking-wider text-primary">Ethics</span>
-      <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">
-        Responsible and Transparent AI
-      </h2>
+      <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">Responsible AI</h2>
     </div>
-
-    <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-5">
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {principles.map((p, i) => (
         <div key={i} className="feature-card text-center">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-primary/10 mx-auto mb-4">

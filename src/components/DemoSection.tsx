@@ -1,55 +1,46 @@
 import { useState, useEffect } from "react";
 import SectionWrapper from "./SectionWrapper";
-import {
-  Zap, Battery, AlertTriangle, DollarSign, Leaf, Award,
-  Power, Clock, Thermometer, Lightbulb, Bell,
-  ToggleRight, Plug, Tv
-} from "lucide-react";
+import { Zap, AlertTriangle, DollarSign, Leaf, Award, TrendingDown, Lightbulb, Thermometer, Plug, Tv } from "lucide-react";
 
 const dashStats = [
-  { icon: Zap, label: "Today's Usage", value: "12.4 kWh", accent: "text-primary" },
-  { icon: Battery, label: "Active Devices", value: "7", accent: "text-secondary" },
-  { icon: AlertTriangle, label: "Waste Detected", value: "1.8 kWh", accent: "text-destructive" },
-  { icon: DollarSign, label: "Monthly Savings", value: "€14.30", accent: "text-eco-success" },
-  { icon: Leaf, label: "CO₂ Reduced", value: "21 kg", accent: "text-eco-teal" },
-  { icon: Award, label: "Energy Score", value: "82/100", accent: "text-eco-blue" },
+  { icon: AlertTriangle, label: "Biggest Waste", value: "Air Conditioning", accent: "text-destructive" },
+  { icon: TrendingDown, label: "Est. kWh Reduction", value: "38 kWh/mo", accent: "text-primary" },
+  { icon: DollarSign, label: "Est. Savings", value: "€12.80/mo", accent: "text-eco-success" },
+  { icon: Award, label: "Energy Score", value: "68/100", accent: "text-eco-blue" },
+  { icon: Leaf, label: "CO₂ Reducible", value: "15 kg", accent: "text-eco-teal" },
+  { icon: Zap, label: "Waste Detected", value: "4.1 kWh/day", accent: "text-eco-warning" },
 ];
 
-const notifications = [
-  { icon: Plug, text: "Phone charger has been plugged in for 6 hours after full charge.", time: "2 min ago" },
-  { icon: Tv, text: "TV standby usage detected overnight in the living room.", time: "18 min ago" },
-  { icon: Lightbulb, text: "Kitchen lights remained on for 95 minutes without movement.", time: "34 min ago" },
-  { icon: Thermometer, text: "Air conditioner is running while the window is open.", time: "1 hr ago" },
-  { icon: Zap, text: "Switching off idle devices now could save 11% this week.", time: "Just now" },
+const recommendations = [
+  { icon: Thermometer, text: "Air conditioning is likely your largest electricity driver.", impact: "High" },
+  { icon: Tv, text: "Two TVs appear to remain on standby overnight.", impact: "Medium" },
+  { icon: Plug, text: "Chargers left plugged in daily may contribute to avoidable standby use.", impact: "Low" },
+  { icon: Lightbulb, text: "Reducing AC use by 1 hour per day could save an estimated €6–€9 per month.", impact: "High" },
 ];
 
-const smartActions = [
-  { label: "Turn off standby devices", active: true },
-  { label: "Schedule water heater", active: false },
-  { label: "Reduce AC runtime", active: true },
-  { label: "Notify when lights are left on", active: true },
-  { label: "Activate Eco Mode", active: false },
+const topWaste = [
+  { label: "Air conditioning", pct: 38 },
+  { label: "Standby devices", pct: 22 },
+  { label: "Lighting", pct: 15 },
+  { label: "Water heater", pct: 14 },
+  { label: "Other", pct: 11 },
 ];
 
 const DemoSection = () => {
-  const [activeNotif, setActiveNotif] = useState(0);
+  const [activeRec, setActiveRec] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveNotif((prev) => (prev + 1) % notifications.length);
-    }, 3000);
+    const timer = setInterval(() => setActiveRec((p) => (p + 1) % recommendations.length), 3500);
     return () => clearInterval(timer);
   }, []);
 
   return (
     <SectionWrapper id="demo">
       <div className="text-center mb-14">
-        <span className="text-xs font-semibold uppercase tracking-wider text-primary">Live Demo</span>
-        <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">
-          The EcoWatt AI Dashboard
-        </h2>
+        <span className="text-xs font-semibold uppercase tracking-wider text-primary">AI Results</span>
+        <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">Your AI Analysis Dashboard</h2>
         <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-          A real-time view of your home's energy intelligence — monitoring, detecting, and acting.
+          Here's what the AI discovers about your household's energy usage — personalized insights, waste detection, and actionable savings.
         </p>
       </div>
 
@@ -66,21 +57,16 @@ const DemoSection = () => {
 
         <div className="grid lg:grid-cols-2 gap-6">
           <div>
-            <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Bell className="w-4 h-4 text-primary" /> AI Notifications
-            </h3>
+            <h3 className="font-display font-semibold text-foreground mb-4">AI Recommendations</h3>
             <div className="space-y-3">
-              {notifications.map((n, i) => (
-                <div
-                  key={i}
-                  className={`notification-card transition-all duration-500 ${
-                    i === activeNotif ? "border-primary/30 bg-primary/5" : ""
-                  }`}
-                >
-                  <n.icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${i === activeNotif ? "text-primary" : "text-muted-foreground"}`} />
+              {recommendations.map((r, i) => (
+                <div key={i} className={`notification-card transition-all duration-500 ${i === activeRec ? "border-primary/30 bg-primary/5" : ""}`}>
+                  <r.icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${i === activeRec ? "text-primary" : "text-muted-foreground"}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground">{n.text}</p>
-                    <span className="text-xs text-muted-foreground">{n.time}</span>
+                    <p className="text-sm text-foreground">{r.text}</p>
+                    <span className={`text-xs font-medium ${r.impact === "High" ? "text-destructive" : r.impact === "Medium" ? "text-eco-warning" : "text-muted-foreground"}`}>
+                      {r.impact} impact
+                    </span>
                   </div>
                 </div>
               ))}
@@ -88,40 +74,28 @@ const DemoSection = () => {
           </div>
 
           <div>
-            <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
-              <ToggleRight className="w-4 h-4 text-primary" /> Smart Actions
-            </h3>
-            <div className="space-y-3">
-              {smartActions.map((a, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card">
-                  <span className="text-sm font-medium text-foreground">{a.label}</span>
-                  <div className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer ${
-                    a.active ? "bg-primary" : "bg-muted"
-                  }`}>
-                    <div className={`w-5 h-5 rounded-full bg-card shadow absolute top-0.5 transition-all ${
-                      a.active ? "left-5" : "left-0.5"
-                    }`} />
+            <h3 className="font-display font-semibold text-foreground mb-4">Top Waste Sources</h3>
+            <div className="space-y-4">
+              {topWaste.map((w, i) => (
+                <div key={i}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-foreground font-medium">{w.label}</span>
+                    <span className="text-muted-foreground">{w.pct}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${w.pct}%`, background: "var(--gradient-primary)" }} />
                   </div>
                 </div>
               ))}
             </div>
 
             <div className="mt-6 dashboard-panel">
-              <div className="text-xs text-muted-foreground mb-3">Energy Usage — Last 7 Days</div>
+              <div className="text-xs text-muted-foreground mb-3">Weekly Usage Trend</div>
               <div className="flex items-end gap-2 h-24">
                 {[65, 45, 70, 50, 38, 55, 42].map((h, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div
-                      className="w-full rounded-md transition-all duration-500"
-                      style={{
-                        height: `${h}%`,
-                        background: h > 60 ? "hsl(var(--destructive))" : "hsl(var(--primary))",
-                        opacity: 0.7 + (i / 20),
-                      }}
-                    />
-                    <span className="text-[10px] text-muted-foreground">
-                      {["M", "T", "W", "T", "F", "S", "S"][i]}
-                    </span>
+                    <div className="w-full rounded-md" style={{ height: `${h}%`, background: h > 60 ? "hsl(var(--destructive))" : "hsl(var(--primary))", opacity: 0.7 + i / 20 }} />
+                    <span className="text-[10px] text-muted-foreground">{["M","T","W","T","F","S","S"][i]}</span>
                   </div>
                 ))}
               </div>
