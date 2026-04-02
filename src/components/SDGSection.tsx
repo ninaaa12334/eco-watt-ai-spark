@@ -8,23 +8,14 @@ const SDGSection = () => (
         <Sun className="w-8 h-8 text-primary-foreground" />
       </div>
       <span className="text-xs font-semibold uppercase tracking-wider text-primary">SDG 7</span>
-      <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 mb-5 text-foreground">
-        Built for SDG 7: Affordable and Clean Energy
-      </h2>
+      <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 mb-5 text-foreground">Built for SDG 7</h2>
       <p className="text-muted-foreground text-lg leading-relaxed mb-8">
-        EcoWatt AI directly supports Sustainable Development Goal 7 by improving household energy efficiency,
-        reducing unnecessary electricity waste, and helping families use energy more responsibly — making
-        clean, affordable energy accessible to everyone.
+        EcoWatt AI Web supports SDG 7: Affordable and Clean Energy by helping households improve energy efficiency,
+        reduce avoidable electricity waste, and better understand electricity consumption — without expensive hardware.
       </p>
       <div className="grid sm:grid-cols-3 gap-4">
-        {[
-          "Improve energy efficiency",
-          "Reduce electricity waste",
-          "Promote responsible usage",
-        ].map((item, i) => (
-          <div key={i} className="glass-card p-5 text-sm font-medium text-foreground">
-            {item}
-          </div>
+        {["Improve energy efficiency", "Reduce electricity waste", "Understand consumption"].map((item, i) => (
+          <div key={i} className="glass-card p-5 text-sm font-medium text-foreground">{item}</div>
         ))}
       </div>
     </div>

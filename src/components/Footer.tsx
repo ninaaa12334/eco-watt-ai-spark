@@ -8,14 +8,12 @@ const Footer = () => (
           <Zap className="w-4 h-4 text-primary-foreground" />
         </div>
         <span className="gradient-text">EcoWatt</span>
-        <span className="text-foreground">AI</span>
+        <span className="text-foreground">AI Web</span>
       </div>
-
       <div className="text-center">
         <p className="text-sm text-muted-foreground">Supporting SDG 7: Affordable and Clean Energy</p>
         <p className="text-xs text-muted-foreground/70 mt-1">Built for a sustainability-focused AI hackathon</p>
       </div>
-
       <div className="flex items-center gap-4">
         {[Github, Twitter, Linkedin, Globe].map((Icon, i) => (
           <a key={i} href="#" className="w-9 h-9 rounded-lg flex items-center justify-center bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors">

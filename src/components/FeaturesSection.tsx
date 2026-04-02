@@ -1,26 +1,32 @@
 import SectionWrapper from "./SectionWrapper";
-import { Activity, Plug, Power, MessageSquare, BarChart3, Thermometer, TrendingUp, Award } from "lucide-react";
+import {
+  Search, BarChart3, DollarSign, Award, ListChecks, Wifi,
+  ClipboardList, Camera, FileSearch, Moon, TrendingUp, MapPin, FileText, Bell
+} from "lucide-react";
 
 const features = [
-  { icon: Activity, title: "Real-Time Energy Monitoring", desc: "Track every watt in real time across all connected devices and circuits." },
-  { icon: Plug, title: "Charger & Standby Detection", desc: "Identifies chargers left plugged in and standby power drain automatically." },
-  { icon: Power, title: "Smart Device Auto Shutoff", desc: "Automatically turns off devices when waste is detected via smart home integration." },
-  { icon: MessageSquare, title: "Personalized Saving Advice", desc: "AI-generated tips tailored to your household's unique energy patterns." },
-  { icon: BarChart3, title: "Appliance Efficiency Insights", desc: "Compare appliance efficiency and spot underperformers over time." },
-  { icon: Thermometer, title: "Heating & Cooling Optimization", desc: "Smart scheduling and anomaly detection for HVAC systems." },
-  { icon: TrendingUp, title: "Monthly Savings Prediction", desc: "Forecasts your potential savings based on current behavior and optimizations." },
-  { icon: Award, title: "Home Energy Score", desc: "A dynamic score rating your household's energy efficiency over time." },
+  { icon: Search, title: "Personalized Waste Detection", desc: "AI estimates where your specific household wastes the most electricity." },
+  { icon: BarChart3, title: "Appliance Usage Insights", desc: "Understand which appliances consume the most and when." },
+  { icon: DollarSign, title: "Savings Estimation", desc: "See how much money and energy you could save each month." },
+  { icon: Award, title: "Energy Score", desc: "A dynamic score rating your household's energy efficiency." },
+  { icon: ListChecks, title: "Prioritized Action Plan", desc: "Recommendations ranked by impact and ease of implementation." },
+  { icon: Wifi, title: "No Hardware Required", desc: "Works with information you already have — no sensors needed." },
+  { icon: ClipboardList, title: "Easy Household Setup", desc: "Simple onboarding to create your energy profile in minutes." },
+  { icon: Camera, title: "AI Appliance Recognition", desc: "Snap a photo and the AI identifies your device automatically." },
+  { icon: FileSearch, title: "Bill Checker", desc: "Upload your bill and AI verifies charges and tariff accuracy." },
+  { icon: Moon, title: "Day/Night Verifier", desc: "Detect whether your meter switches tariffs at the correct times." },
+  { icon: TrendingUp, title: "Consumption Analyzer", desc: "Analyze months of bills for unexpected consumption changes." },
+  { icon: MapPin, title: "Community Map", desc: "Report and visualize meter issues across neighborhoods." },
+  { icon: FileText, title: "Auto Complaint Generator", desc: "Generate formal, evidence-based complaints automatically." },
+  { icon: Bell, title: "Bill Anomaly Alerts", desc: "Get alerted when your bill exceeds normal thresholds." },
 ];
 
 const FeaturesSection = () => (
   <SectionWrapper id="features" className="bg-muted/30">
     <div className="text-center mb-14">
       <span className="text-xs font-semibold uppercase tracking-wider text-primary">Features</span>
-      <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">
-        Everything You Need to Save Energy
-      </h2>
+      <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">Everything You Need</h2>
     </div>
-
     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {features.map((f, i) => (
         <div key={i} className="feature-card group">
