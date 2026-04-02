@@ -1,31 +1,33 @@
 import SectionWrapper from "./SectionWrapper";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { DollarSign, Leaf, Heart, TrendingDown, Wifi, Shield } from "lucide-react";
 
-const reasons = [
-  { icon: DollarSign, title: "Lower electricity bills", desc: "Identify and eliminate hidden waste to reduce monthly costs." },
-  { icon: Leaf, title: "Reduce unnecessary energy use", desc: "Cut consumption that serves no purpose in your daily life." },
-  { icon: Heart, title: "Accessible sustainability", desc: "Make sustainable living practical for every household." },
-  { icon: TrendingDown, title: "Better energy habits", desc: "Build awareness of daily habits that drive consumption." },
-  { icon: Wifi, title: "No expensive hardware", desc: "A low-cost alternative to sensor-based smart home systems." },
-  { icon: Shield, title: "Bill confidence", desc: "Give users more confidence about their bills and meter behavior." },
-];
+const icons = [DollarSign, Leaf, Heart, TrendingDown, Wifi, Shield];
 
-const WhyItMattersSection = () => (
-  <SectionWrapper id="why-it-matters">
-    <div className="text-center mb-14">
-      <span className="text-xs font-semibold uppercase tracking-wider text-primary">Value</span>
-      <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">Why It Matters</h2>
-    </div>
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      {reasons.map((r, i) => (
-        <div key={i} className="glass-card p-7 group hover:eco-glow transition-all duration-300">
-          <r.icon className="w-7 h-7 text-primary mb-4" />
-          <h3 className="font-display font-semibold text-foreground mb-2">{r.title}</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">{r.desc}</p>
-        </div>
-      ))}
-    </div>
-  </SectionWrapper>
-);
+const WhyItMattersSection = () => {
+  const { lang, t } = useLanguage();
+  const w = t.whyItMatters;
+
+  return (
+    <SectionWrapper id="why-it-matters">
+      <div className="text-center mb-14">
+        <span className="text-xs font-semibold uppercase tracking-wider text-primary">{w.label[lang]}</span>
+        <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">{w.title[lang]}</h2>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {w.items.map((r, i) => {
+          const Icon = icons[i];
+          return (
+            <div key={i} className="glass-card p-7 group hover:eco-glow transition-all duration-300">
+              <Icon className="w-7 h-7 text-primary mb-4" />
+              <h3 className="font-display font-semibold text-foreground mb-2">{r.title[lang]}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{r.desc[lang]}</p>
+            </div>
+          );
+        })}
+      </div>
+    </SectionWrapper>
+  );
+};
 
 export default WhyItMattersSection;
