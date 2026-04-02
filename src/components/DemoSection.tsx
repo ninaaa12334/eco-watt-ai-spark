@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import SectionWrapper from "./SectionWrapper";
-import AnimatedCounter from "./AnimatedCounter";
 import {
   Zap, Battery, AlertTriangle, DollarSign, Leaf, Award,
   Power, Clock, Thermometer, Lightbulb, Bell,
-  ToggleRight
+  ToggleRight, Plug, Tv
 } from "lucide-react";
 
 const dashStats = [
@@ -32,8 +31,6 @@ const smartActions = [
   { label: "Activate Eco Mode", active: false },
 ];
 
-import { Tv, Plug } from "lucide-react";
-
 const DemoSection = () => {
   const [activeNotif, setActiveNotif] = useState(0);
 
@@ -57,7 +54,6 @@ const DemoSection = () => {
       </div>
 
       <div className="glass-card p-6 md:p-8 rounded-2xl">
-        {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {dashStats.map((s, i) => (
             <div key={i} className="dashboard-panel">
@@ -69,7 +65,6 @@ const DemoSection = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Notifications */}
           <div>
             <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
               <Bell className="w-4 h-4 text-primary" /> AI Notifications
@@ -92,7 +87,6 @@ const DemoSection = () => {
             </div>
           </div>
 
-          {/* Smart actions */}
           <div>
             <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
               <ToggleRight className="w-4 h-4 text-primary" /> Smart Actions
@@ -112,7 +106,6 @@ const DemoSection = () => {
               ))}
             </div>
 
-            {/* Energy chart mock */}
             <div className="mt-6 dashboard-panel">
               <div className="text-xs text-muted-foreground mb-3">Energy Usage — Last 7 Days</div>
               <div className="flex items-end gap-2 h-24">
