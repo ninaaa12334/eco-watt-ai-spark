@@ -25,7 +25,7 @@ const ImpactSection = () => {
             <div key={i} className="glass-card p-8 text-center group hover:eco-glow transition-all duration-300">
               <Icon className={`w-8 h-8 ${metricColors[i]} mx-auto mb-4`} />
               <div className={`text-4xl font-bold font-display ${metricColors[i]} mb-2`}>
-                <AnimatedCounter end={metricValues[i]} prefix={m.prefix} suffix={m.suffix} decimals={metricDecimals[i]} />
+                <AnimatedCounter end={metricValues[i]} prefix={"prefix" in m ? m.prefix : undefined} suffix={m.suffix} decimals={metricDecimals[i]} />
               </div>
               <p className="text-sm text-muted-foreground">{m.label[lang]}</p>
               <div className="mt-4 h-1.5 rounded-full bg-muted overflow-hidden">
