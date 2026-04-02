@@ -14,6 +14,7 @@ import CommunityMap from "@/components/CommunityMap";
 import AutoComplaintSection from "@/components/AutoComplaintSection";
 import BillAnomalyAlerts from "@/components/BillAnomalyAlerts";
 import SmartBillVerification from "@/components/SmartBillVerification";
+import KEDSContactSection from "@/components/KEDSContactSection";
 import ImpactSection from "@/components/ImpactSection";
 import WhyItMattersSection from "@/components/WhyItMattersSection";
 import SDGSection from "@/components/SDGSection";
@@ -39,6 +40,7 @@ const Index = () => (
     <AutoComplaintSection />
     <BillAnomalyAlerts />
     <SmartBillVerification />
+    <KEDSContactSection />
     <ImpactSection />
     <WhyItMattersSection />
     <SDGSection />
