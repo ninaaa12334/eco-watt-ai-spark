@@ -1,9 +1,11 @@
 import { useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import SectionWrapper from "./SectionWrapper";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useHousehold } from "@/hooks/useHousehold";
 import { useDevices, useAddDevice, useUpdateDevice, useDeleteDevice, useRecognizeDevice, useUploadDevicePhoto, useCalculateEnergy } from "@/hooks/useEnergy";
-import { Camera, PenLine, Tv, Wind, Smartphone, CheckCircle, Plus, Trash2, Edit2, Loader2, X, Zap } from "lucide-react";
+import { Camera, PenLine, CheckCircle, Plus, Trash2, Edit2, Loader2, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 const DEVICE_TYPES = ["tv", "ac", "heater", "fridge", "washing_machine", "charger", "laptop", "boiler", "console", "light", "fan", "microwave", "oven", "other"];
@@ -13,6 +15,8 @@ const SmartApplianceSetup = () => {
   const { lang, t } = useLanguage();
   const a = t.applianceSetup;
   const { user } = useAuth();
+  const { householdId, loading: householdLoading } = useHousehold();
+  const qc = useQueryClient();
   const { data: devices, isLoading } = useDevices();
   const addDevice = useAddDevice();
   const updateDev = useUpdateDevice();
@@ -77,6 +81,15 @@ const SmartApplianceSetup = () => {
   };
 
   const handleSave = async () => {
+    if (!householdId) {
+      toast.error(
+        lang === "sq"
+          ? "Profili i shtëpisë po përgatitet. Ju lutem prisni pak dhe provoni përsëri."
+          : "Your household profile is still loading. Please wait a moment and try again."
+      );
+      return;
+    }
+
     if (!form.name.trim()) {
       toast.error(lang === "sq" ? "Emri i pajisjes kërkohet" : "Device name is required");
       return;
@@ -102,6 +115,7 @@ const SmartApplianceSetup = () => {
         await addDevice.mutateAsync(deviceData);
         toast.success(lang === "sq" ? "Pajisja u shtua" : "Device added");
       }
+      await handleRecalculate();
       resetForm();
     } catch (err: any) {
       toast.error(err.message);
@@ -123,7 +137,17 @@ const SmartApplianceSetup = () => {
       await calcEnergy.mutateAsync();
       toast.success(lang === "sq" ? "Kalkulimet u rifreskuan" : "Calculations refreshed");
     } catch (err: any) {
-      toast.error(err.message);
+      // Fallback: even if edge calculation fails, refresh UI based on saved device data.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["devices"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard"] }),
+        qc.invalidateQueries({ queryKey: ["savings"] }),
+      ]);
+      toast.warning(
+        lang === "sq"
+          ? "Rillogaritja e avancuar dështoi, por të dhënat lokale u rifreskuan."
+          : "Advanced recalculation failed, but local data has been refreshed."
+      );
     }
   };
 
@@ -139,8 +163,62 @@ const SmartApplianceSetup = () => {
         <div className="text-center py-10">
           <p className="text-muted-foreground">{lang === "sq" ? "Kyçu për të menaxhuar pajisjet" : "Sign in to manage devices"}</p>
         </div>
+      ) : householdLoading ? (
+        <div className="text-center py-10">
+          <p className="text-muted-foreground">
+            {lang === "sq"
+              ? "Duke përgatitur profilin e shtëpisë..."
+              : "Preparing your household profile..."}
+          </p>
+        </div>
+      ) : !householdId ? (
+        <div className="text-center py-10 space-y-3">
+          <p className="text-muted-foreground">
+            {lang === "sq"
+              ? "Nuk u krijua profili i shtëpisë. Provo përsëri."
+              : "Household profile was not created yet. Please retry."}
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="btn-outline-eco text-sm"
+          >
+            {lang === "sq" ? "Rifresko faqen" : "Refresh page"}
+          </button>
+        </div>
       ) : (
         <div className="max-w-4xl mx-auto space-y-6">
+          {devices && devices.length > 0 && (
+            <div className="grid sm:grid-cols-3 gap-3">
+              {(() => {
+                const daily = devices.reduce((sum, dev) => {
+                  const runKwh = ((dev.power_watts || 0) * (dev.daily_usage_hours || 0)) / 1000;
+                  const standbyHours = Math.max(24 - (dev.daily_usage_hours || 0), 0);
+                  const standbyKwh = dev.is_standby ? ((dev.standby_watts || 0) * standbyHours) / 1000 : 0;
+                  return sum + runKwh + standbyKwh;
+                }, 0);
+                const monthly = daily * 30;
+                const monthlyCost = monthly * 0.0805;
+                return (
+                  <>
+                    <div className="glass-card p-4 rounded-xl">
+                      <div className="text-xs text-muted-foreground">{lang === "sq" ? "Konsum ditor (vlerësuar)" : "Estimated daily usage"}</div>
+                      <div className="text-xl font-display font-bold text-primary">{daily.toFixed(2)} kWh</div>
+                    </div>
+                    <div className="glass-card p-4 rounded-xl">
+                      <div className="text-xs text-muted-foreground">{lang === "sq" ? "Konsum mujor (vlerësuar)" : "Estimated monthly usage"}</div>
+                      <div className="text-xl font-display font-bold text-secondary">{monthly.toFixed(1)} kWh</div>
+                    </div>
+                    <div className="glass-card p-4 rounded-xl">
+                      <div className="text-xs text-muted-foreground">{lang === "sq" ? "Kosto mujore (vlerësuar)" : "Estimated monthly cost"}</div>
+                      <div className="text-xl font-display font-bold text-eco-success">€{monthlyCost.toFixed(2)}</div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
           {/* Action buttons */}
           <div className="flex flex-wrap gap-3">
             <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-primary-eco text-sm">
@@ -255,6 +333,25 @@ const SmartApplianceSetup = () => {
                     <div className="p-2 rounded-lg bg-muted/50"><span className="text-muted-foreground">Watts:</span> <span className="font-semibold text-foreground">{dev.power_watts}W</span></div>
                     <div className="p-2 rounded-lg bg-muted/50"><span className="text-muted-foreground">{lang === "sq" ? "Orë" : "Hours"}:</span> <span className="font-semibold text-foreground">{dev.daily_usage_hours}h</span></div>
                   </div>
+                  {(() => {
+                    const runKwh = ((dev.power_watts || 0) * (dev.daily_usage_hours || 0)) / 1000;
+                    const standbyHours = Math.max(24 - (dev.daily_usage_hours || 0), 0);
+                    const standbyKwh = dev.is_standby ? ((dev.standby_watts || 0) * standbyHours) / 1000 : 0;
+                    const dailyKwh = runKwh + standbyKwh;
+                    const monthlyKwh = dailyKwh * 30;
+                    return (
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2 rounded-lg bg-primary/5 border border-primary/20">
+                          <span className="text-muted-foreground">{lang === "sq" ? "Ditore" : "Daily"}:</span>{" "}
+                          <span className="font-semibold text-foreground">{dailyKwh.toFixed(2)} kWh</span>
+                        </div>
+                        <div className="p-2 rounded-lg bg-secondary/5 border border-secondary/20">
+                          <span className="text-muted-foreground">{lang === "sq" ? "Mujore" : "Monthly"}:</span>{" "}
+                          <span className="font-semibold text-foreground">{monthlyKwh.toFixed(1)} kWh</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {dev.waste_detected && (
                     <div className="mt-3 p-2 rounded-lg bg-destructive/5 border border-destructive/20 text-xs text-destructive">
                       ⚠ {dev.waste_reason || (lang === "sq" ? "Humbje e detektuar" : "Waste detected")}

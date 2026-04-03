@@ -90,8 +90,12 @@ export function useAddDevice() {
   const qc = useQueryClient();
   const { householdId } = useHousehold();
   return useMutation({
-    mutationFn: (device: Omit<Parameters<typeof addDevice>[0], "household_id">) =>
-      addDevice({ ...device, household_id: householdId! }),
+    mutationFn: async (device: Omit<Parameters<typeof addDevice>[0], "household_id">) => {
+      if (!householdId) {
+        throw new Error("Your household profile is still loading. Please try again in a moment.");
+      }
+      return addDevice({ ...device, household_id: householdId });
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["devices"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
   });
 }
@@ -116,8 +120,12 @@ export function useAddTariffCheck() {
   const qc = useQueryClient();
   const { householdId } = useHousehold();
   return useMutation({
-    mutationFn: (check: Omit<Parameters<typeof addTariffCheck>[0], "household_id">) =>
-      addTariffCheck({ ...check, household_id: householdId! }),
+    mutationFn: async (check: Omit<Parameters<typeof addTariffCheck>[0], "household_id">) => {
+      if (!householdId) {
+        throw new Error("Your household profile is still loading. Please try again in a moment.");
+      }
+      return addTariffCheck({ ...check, household_id: householdId });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tariffChecks"] }),
   });
 }
@@ -136,8 +144,12 @@ export function useAddBill() {
   const qc = useQueryClient();
   const { householdId } = useHousehold();
   return useMutation({
-    mutationFn: (bill: Omit<Parameters<typeof addBill>[0], "household_id">) =>
-      addBill({ ...bill, household_id: householdId! }),
+    mutationFn: async (bill: Omit<Parameters<typeof addBill>[0], "household_id">) => {
+      if (!householdId) {
+        throw new Error("Your household profile is still loading. Please try again in a moment.");
+      }
+      return addBill({ ...bill, household_id: householdId });
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["bills"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
   });
 }

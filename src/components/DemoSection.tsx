@@ -19,12 +19,26 @@ const DemoSection = () => {
 
   const recs = dash?.recommendations || [];
   const alerts = dash?.alerts || [];
+  const devices = dash?.devices || [];
 
   useEffect(() => {
     const count = recs.length || d.recommendations.length;
     const timer = setInterval(() => setActiveRec((p) => (p + 1) % count), 3500);
     return () => clearInterval(timer);
   }, [recs.length]);
+
+  // Calculate real usage (daily/monthly) from saved devices
+  const sortedByUsage = [...devices]
+    .map((dev) => {
+      const runKwh = ((dev.power_watts || 0) * (dev.daily_usage_hours || 0)) / 1000;
+      const standbyHours = Math.max(24 - (dev.daily_usage_hours || 0), 0);
+      const standbyKwh = dev.is_standby ? ((dev.standby_watts || 0) * standbyHours) / 1000 : 0;
+      const dailyKwh = runKwh + standbyKwh;
+      return { ...dev, dailyKwh, monthlyKwh: dailyKwh * 30 };
+    })
+    .sort((a, b) => b.dailyKwh - a.dailyKwh);
+  const totalDailyUsage = sortedByUsage.reduce((sum, d) => sum + d.dailyKwh, 0);
+  const totalMonthlyUsage = totalDailyUsage * 30;
 
   // Calculate waste percentages from real device data
   const wasteDevices = dash?.devices?.filter((dev) => dev.waste_detected) || [];
@@ -38,17 +52,51 @@ const DemoSection = () => {
 
   // Use real data or fallback
   const dashStats = [
-    { icon: AlertTriangle, label: d.biggestWaste[lang], value: dash ? (wasteDevices[0]?.name || "N/A") : d.ac[lang], accent: "text-destructive" },
-    { icon: TrendingDown, label: d.kwhReduction[lang], value: dash ? `${dash.wasteKwh} kWh` : "38 kWh/mo", accent: "text-primary" },
-    { icon: DollarSign, label: d.savings[lang], value: dash ? `€${dash.estimatedSavings}/mo` : "€12.80/mo", accent: "text-eco-success" },
+    {
+      icon: AlertTriangle,
+      label: lang === "sq" ? "Pajisja që shpenzon më shumë" : "Highest-consuming device",
+      value: sortedByUsage[0]?.name || (dash ? "N/A" : d.ac[lang]),
+      accent: "text-destructive",
+    },
+    {
+      icon: TrendingDown,
+      label: lang === "sq" ? "Konsum ditor i pajisjeve" : "Daily device consumption",
+      value: dash ? `${totalDailyUsage.toFixed(2)} kWh` : "1.9 kWh",
+      accent: "text-primary",
+    },
+    {
+      icon: DollarSign,
+      label: lang === "sq" ? "Kosto mujore e pajisjeve" : "Monthly device cost",
+      value: dash ? `€${(totalMonthlyUsage * 0.0805).toFixed(2)}` : "€12.80/mo",
+      accent: "text-eco-success",
+    },
     { icon: Award, label: d.energyScore[lang], value: dash ? `${dash.energyScore}/100` : "68/100", accent: "text-eco-blue" },
     { icon: Leaf, label: d.co2[lang], value: dash ? `${dash.co2Reduction} kg` : "15 kg", accent: "text-eco-teal" },
     { icon: Zap, label: d.wasteDetected[lang], value: dash ? `${dash.wasteKwh} kWh` : "4.1 kWh", accent: "text-eco-warning" },
   ];
 
   // Use real alerts/recommendations or fallback
+  const generatedDeviceRecs = sortedByUsage.slice(0, 3).map((dev, idx) => {
+    const priority = idx === 0 ? "high" : idx === 1 ? "medium" : "low";
+    const textSq =
+      idx === 0
+        ? `${dev.name} po konsumon më së shumti (${dev.monthlyKwh.toFixed(1)} kWh/muaj). Ulni orët ditore ose aktivizoni modalitetin eco.`
+        : idx === 1
+          ? `${dev.name} ka konsum të lartë (${dev.dailyKwh.toFixed(2)} kWh/ditë). Kontrolloni orarin e përdorimit.`
+          : `${dev.name} mund të optimizohet duke fikur standby-n kur nuk përdoret.`;
+    const textEn =
+      idx === 0
+        ? `${dev.name} is your biggest consumer (${dev.monthlyKwh.toFixed(1)} kWh/month). Reduce daily hours or enable eco mode.`
+        : idx === 1
+          ? `${dev.name} has high usage (${dev.dailyKwh.toFixed(2)} kWh/day). Review operating schedule.`
+          : `${dev.name} can be optimized by turning off standby when not in use.`;
+    return { text: lang === "sq" ? textSq : textEn, impact: priority };
+  });
+
   const displayRecs = recs.length > 0
     ? recs.map((r) => ({ text: lang === "sq" ? r.text_sq : r.text_en, impact: r.impact }))
+    : generatedDeviceRecs.length > 0
+      ? generatedDeviceRecs
     : d.recommendations.map((r) => ({ text: r.text[lang], impact: r.impact[lang] }));
 
   // Weekly chart from real records
@@ -102,6 +150,30 @@ const DemoSection = () => {
             </div>
 
             <div>
+              <h3 className="font-display font-semibold text-foreground mb-4">
+                {lang === "sq" ? "Pajisjet që shpenzojnë më së shumti" : "Top electricity consumers"}
+              </h3>
+              <div className="space-y-3 mb-5">
+                {sortedByUsage.slice(0, 5).map((dev, i) => (
+                  <div key={dev.id ?? i} className="p-3 rounded-xl border border-border/40 bg-muted/30">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium text-foreground">{dev.name}</span>
+                      <span className="text-muted-foreground">{dev.monthlyKwh.toFixed(1)} kWh/mo</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {lang === "sq" ? "Ditore" : "Daily"}: {dev.dailyKwh.toFixed(2)} kWh
+                    </p>
+                  </div>
+                ))}
+                {sortedByUsage.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {lang === "sq"
+                      ? "Shtoni pajisje në Smart Appliance Setup për të parë analizën."
+                      : "Add devices in Smart Appliance Setup to see analysis."}
+                  </p>
+                )}
+              </div>
+
               <h3 className="font-display font-semibold text-foreground mb-4">{d.topWaste[lang]}</h3>
               <div className="space-y-4">
                 {wasteLabels.slice(0, 5).map((w, i) => (
