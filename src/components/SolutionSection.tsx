@@ -4,6 +4,7 @@ import { Brain, FileSearch, ListChecks } from "lucide-react";
 
 const icons = [Brain, FileSearch, ListChecks];
 const colors = ["bg-primary/10 text-primary", "bg-secondary/10 text-secondary", "bg-eco-warning/10 text-eco-warning"];
+const links = ["#demo", "#bill-checker", "#impact"];
 
 const SolutionSection = () => {
   const { lang, t } = useLanguage();
@@ -20,13 +21,13 @@ const SolutionSection = () => {
         {s.items.map((a, i) => {
           const Icon = icons[i];
           return (
-            <div key={i} className="glass-card p-8 text-center group hover:eco-glow transition-all duration-300">
+            <a key={i} href={links[i]} className="glass-card p-8 text-center group hover:eco-glow transition-all duration-300 cursor-pointer block">
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5 ${colors[i]}`}>
                 <Icon className="w-7 h-7" />
               </div>
               <h3 className="font-display text-lg font-semibold text-foreground mb-2">{a.title[lang]}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{a.desc[lang]}</p>
-            </div>
+            </a>
           );
         })}
       </div>
