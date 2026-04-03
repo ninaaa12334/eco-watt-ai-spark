@@ -2,19 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useHousehold } from "./useHousehold";
 import { useAuth } from "./useAuth";
 import {
-  fetchDashboard,
-  fetchDevices,
-  fetchAlerts,
-  fetchRecommendations,
-  fetchSavings,
-  fetchHistory,
-  fetchBills,
-  fetchTariffChecks,
-  fetchCommunityReports,
-  addDevice,
-  addTariffCheck,
-  addCommunityReport,
-  performAction,
+  fetchDashboard, fetchDevices, fetchAlerts, fetchRecommendations,
+  fetchSavings, fetchHistory, fetchBills, fetchTariffChecks,
+  fetchCommunityReports, addDevice, updateDevice, deleteDevice,
+  addTariffCheck, addCommunityReport, addBill, performAction,
+  calculateEnergy, recognizeDevice, analyzeBill,
+  uploadDevicePhoto, uploadBillFile,
 } from "@/services/energyService";
 
 export function useDashboard() {
@@ -90,10 +83,7 @@ export function useTariffChecks() {
 }
 
 export function useCommunityReports() {
-  return useQuery({
-    queryKey: ["communityReports"],
-    queryFn: fetchCommunityReports,
-  });
+  return useQuery({ queryKey: ["communityReports"], queryFn: fetchCommunityReports });
 }
 
 export function useAddDevice() {
@@ -102,10 +92,23 @@ export function useAddDevice() {
   return useMutation({
     mutationFn: (device: Omit<Parameters<typeof addDevice>[0], "household_id">) =>
       addDevice({ ...device, household_id: householdId! }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["devices"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["devices"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
+  });
+}
+
+export function useUpdateDevice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Record<string, unknown> }) => updateDevice(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["devices"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
+  });
+}
+
+export function useDeleteDevice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteDevice,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["devices"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
   });
 }
 
@@ -129,6 +132,16 @@ export function useAddCommunityReport() {
   });
 }
 
+export function useAddBill() {
+  const qc = useQueryClient();
+  const { householdId } = useHousehold();
+  return useMutation({
+    mutationFn: (bill: Omit<Parameters<typeof addBill>[0], "household_id">) =>
+      addBill({ ...bill, household_id: householdId! }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["bills"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
+  });
+}
+
 export function usePerformAction() {
   const qc = useQueryClient();
   return useMutation({
@@ -138,5 +151,44 @@ export function usePerformAction() {
       qc.invalidateQueries({ queryKey: ["devices"] });
       qc.invalidateQueries({ queryKey: ["savings"] });
     },
+  });
+}
+
+export function useCalculateEnergy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: calculateEnergy,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["devices"] });
+      qc.invalidateQueries({ queryKey: ["savings"] });
+      qc.invalidateQueries({ queryKey: ["recommendations"] });
+      qc.invalidateQueries({ queryKey: ["alerts"] });
+    },
+  });
+}
+
+export function useRecognizeDevice() {
+  return useMutation({
+    mutationFn: ({ imageUrl, imageBase64 }: { imageUrl?: string; imageBase64?: string }) =>
+      recognizeDevice(imageUrl, imageBase64),
+  });
+}
+
+export function useAnalyzeBill() {
+  return useMutation({ mutationFn: analyzeBill });
+}
+
+export function useUploadDevicePhoto() {
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: (file: File) => uploadDevicePhoto(user!.id, file),
+  });
+}
+
+export function useUploadBillFile() {
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: (file: File) => uploadBillFile(user!.id, file),
   });
 }
