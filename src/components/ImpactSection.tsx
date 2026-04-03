@@ -1,16 +1,24 @@
 import SectionWrapper from "./SectionWrapper";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useSavings } from "@/hooks/useEnergy";
 import AnimatedCounter from "./AnimatedCounter";
 import { Zap, DollarSign, TrendingDown, Leaf } from "lucide-react";
 
 const metricIcons = [Zap, DollarSign, TrendingDown, Leaf];
-const metricValues = [42, 14.3, 9, 21];
 const metricColors = ["text-primary", "text-eco-success", "text-secondary", "text-eco-teal"];
-const metricDecimals = [0, 1, 0, 0];
 
 const ImpactSection = () => {
   const { lang, t } = useLanguage();
   const imp = t.impact;
+  const { user } = useAuth();
+  const { data: savings } = useSavings();
+
+  // Use real data or fallback
+  const values = savings
+    ? [savings.potentialSavingsKwh, savings.potentialSavingsEur, Math.round((savings.totalWasteKwh / (savings.potentialSavingsKwh || 1)) * 100) || 9, savings.co2Avoided]
+    : [42, 14.3, 9, 21];
+  const decimals = savings ? [1, 2, 0, 1] : [0, 1, 0, 0];
 
   return (
     <SectionWrapper id="impact">
@@ -25,11 +33,11 @@ const ImpactSection = () => {
             <div key={i} className="glass-card p-8 text-center group hover:eco-glow transition-all duration-300">
               <Icon className={`w-8 h-8 ${metricColors[i]} mx-auto mb-4`} />
               <div className={`text-4xl font-bold font-display ${metricColors[i]} mb-2`}>
-                <AnimatedCounter end={metricValues[i]} prefix={"prefix" in m ? m.prefix : undefined} suffix={m.suffix} decimals={metricDecimals[i]} />
+                <AnimatedCounter end={values[i]} prefix={"prefix" in m ? m.prefix : undefined} suffix={m.suffix} decimals={decimals[i]} />
               </div>
               <p className="text-sm text-muted-foreground">{m.label[lang]}</p>
               <div className="mt-4 h-1.5 rounded-full bg-muted overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((metricValues[i] / 50) * 100, 100)}%`, background: "var(--gradient-primary)" }} />
+                <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((values[i] / 50) * 100, 100)}%`, background: "var(--gradient-primary)" }} />
               </div>
             </div>
           );

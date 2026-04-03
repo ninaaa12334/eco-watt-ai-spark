@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Zap, Menu, X, Globe } from "lucide-react";
+import { Zap, Menu, X, Globe, LogOut, User } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
   const { lang, setLang, t } = useLanguage();
+  const { user, signOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -46,7 +48,19 @@ const Navbar = () => {
             <Globe className="w-3.5 h-3.5" />
             {t.langSwitch[lang === "sq" ? "en" : "sq"]}
           </button>
-          <Link to="/sign-up" className="btn-primary-eco text-xs px-5 py-2.5">{t.nav.signUp[lang]}</Link>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5" />
+                {user.email?.split("@")[0]}
+              </span>
+              <button onClick={() => signOut()} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1">
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <Link to="/sign-up" className="btn-primary-eco text-xs px-5 py-2.5">{t.nav.signUp[lang]}</Link>
+          )}
         </div>
 
         <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -66,7 +80,13 @@ const Navbar = () => {
             <Globe className="w-4 h-4" />
             {t.langSwitch[lang === "sq" ? "en" : "sq"]}
           </button>
-          <Link to="/sign-up" onClick={() => setMobileOpen(false)} className="btn-primary-eco text-xs text-center mt-2">{t.nav.signUp[lang]}</Link>
+          {user ? (
+            <button onClick={() => { signOut(); setMobileOpen(false); }} className="text-sm text-muted-foreground hover:text-destructive py-2 flex items-center gap-2">
+              <LogOut className="w-4 h-4" /> {lang === "sq" ? "Dil" : "Sign Out"}
+            </button>
+          ) : (
+            <Link to="/sign-up" onClick={() => setMobileOpen(false)} className="btn-primary-eco text-xs text-center mt-2">{t.nav.signUp[lang]}</Link>
+          )}
         </div>
       )}
     </nav>

@@ -1,8 +1,12 @@
 import SectionWrapper from "./SectionWrapper";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useTariffChecks, useAddTariffCheck } from "@/hooks/useEnergy";
+import { Clock, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
-const logs = [
+const fallbackLogs = [
   { time: "22:00", expectedKey: "night" as const, actualKey: "night" as const, ok: true },
   { time: "22:15", expectedKey: "night" as const, actualKey: "day" as const, ok: false },
   { time: "22:30", expectedKey: "night" as const, actualKey: "night" as const, ok: true },
@@ -13,6 +17,44 @@ const logs = [
 const DayNightVerifier = () => {
   const { lang, t } = useLanguage();
   const d = t.dayNight;
+  const { user } = useAuth();
+  const { data: checks } = useTariffChecks();
+  const addCheck = useAddTariffCheck();
+  const [newTime, setNewTime] = useState("");
+  const [newActual, setNewActual] = useState<"day" | "night">("night");
+
+  const logs = checks && checks.length > 0
+    ? checks.map((c) => ({
+        time: c.check_time.slice(0, 5),
+        expectedKey: c.expected_tariff as "day" | "night",
+        actualKey: c.actual_tariff as "day" | "night",
+        ok: c.is_correct,
+      }))
+    : fallbackLogs;
+
+  const incorrectCount = logs.filter((l) => !l.ok).length;
+
+  const handleAddCheck = () => {
+    if (!newTime || !user) return;
+    const hour = parseInt(newTime.split(":")[0]);
+    const now = new Date();
+    const month = now.getMonth();
+    const isWinter = month >= 9 || month <= 2;
+    const dayStart = isWinter ? 7 : 8;
+    const dayEnd = isWinter ? 22 : 23;
+    const expected = hour >= dayStart && hour < dayEnd ? "day" : "night";
+    const isCorrect = expected === newActual;
+
+    addCheck.mutate(
+      { check_time: newTime + ":00", expected_tariff: expected, actual_tariff: newActual, is_correct: isCorrect },
+      {
+        onSuccess: () => {
+          toast.success(lang === "sq" ? "Kontrolli u shtua" : "Check added");
+          setNewTime("");
+        },
+      }
+    );
+  };
 
   return (
     <SectionWrapper id="day-night-verifier">
@@ -27,6 +69,19 @@ const DayNightVerifier = () => {
           <Clock className="w-6 h-6 text-primary" />
           <h3 className="font-display font-semibold text-foreground">{d.logTitle[lang]}</h3>
         </div>
+
+        {user && (
+          <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-muted/50">
+            <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="px-3 py-2 rounded-lg border border-border/50 bg-card text-sm text-foreground" />
+            <select value={newActual} onChange={(e) => setNewActual(e.target.value as "day" | "night")} className="px-3 py-2 rounded-lg border border-border/50 bg-card text-sm text-foreground">
+              <option value="day">{d.day[lang]}</option>
+              <option value="night">{d.night[lang]}</option>
+            </select>
+            <button onClick={handleAddCheck} disabled={addCheck.isPending} className="btn-primary-eco text-sm py-2 px-4">
+              {addCheck.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : (lang === "sq" ? "Shto" : "Add")}
+            </button>
+          </div>
+        )}
 
         <div className="space-y-3">
           {logs.map((l, i) => (
@@ -53,7 +108,11 @@ const DayNightVerifier = () => {
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-eco-warning mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-foreground">{d.aiAnalysis[lang]}</p>
+              <p className="text-sm font-medium text-foreground">
+                {incorrectCount > 0
+                  ? (lang === "sq" ? `${incorrectCount} kontrolle me problem u gjetën` : `${incorrectCount} checks with issues found`)
+                  : d.aiAnalysis[lang]}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">{d.aiDesc[lang]}</p>
             </div>
           </div>

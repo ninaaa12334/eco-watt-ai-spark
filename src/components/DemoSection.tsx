@@ -1,29 +1,61 @@
 import { useState, useEffect } from "react";
 import SectionWrapper from "./SectionWrapper";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { Zap, AlertTriangle, DollarSign, Leaf, Award, TrendingDown, Lightbulb, Thermometer, Plug, Tv } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useDashboard, usePerformAction } from "@/hooks/useEnergy";
+import { Zap, AlertTriangle, DollarSign, Leaf, Award, TrendingDown, Lightbulb, Thermometer, Plug, Tv, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const recIcons = [Thermometer, Tv, Plug, Lightbulb];
-const wastePcts = [38, 22, 15, 14, 11];
+const fallbackWastePcts = [38, 22, 15, 14, 11];
 
 const DemoSection = () => {
   const { lang, t } = useLanguage();
   const d = t.demo;
+  const { user } = useAuth();
+  const { data: dash, isLoading } = useDashboard();
+  const actionMut = usePerformAction();
   const [activeRec, setActiveRec] = useState(0);
 
-  useEffect(() => {
-    const timer = setInterval(() => setActiveRec((p) => (p + 1) % d.recommendations.length), 3500);
-    return () => clearInterval(timer);
-  }, []);
+  const recs = dash?.recommendations || [];
+  const alerts = dash?.alerts || [];
 
+  useEffect(() => {
+    const count = recs.length || d.recommendations.length;
+    const timer = setInterval(() => setActiveRec((p) => (p + 1) % count), 3500);
+    return () => clearInterval(timer);
+  }, [recs.length]);
+
+  // Calculate waste percentages from real device data
+  const wasteDevices = dash?.devices?.filter((dev) => dev.waste_detected) || [];
+  const totalWaste = wasteDevices.reduce((s, dev) => s + (dev.waste_kwh || 0), 0);
+  const wastePcts = wasteDevices.length > 0
+    ? wasteDevices.slice(0, 5).map((dev) => totalWaste > 0 ? Math.round(((dev.waste_kwh || 0) / totalWaste) * 100) : 0)
+    : fallbackWastePcts;
+  const wasteLabels = wasteDevices.length > 0
+    ? wasteDevices.slice(0, 5).map((dev) => ({ sq: dev.name, en: dev.name }))
+    : d.wasteLabels.map((w) => ({ sq: w.sq, en: w.en }));
+
+  // Use real data or fallback
   const dashStats = [
-    { icon: AlertTriangle, label: d.biggestWaste[lang], value: d.ac[lang], accent: "text-destructive" },
-    { icon: TrendingDown, label: d.kwhReduction[lang], value: "38 kWh/mo", accent: "text-primary" },
-    { icon: DollarSign, label: d.savings[lang], value: "€12.80/mo", accent: "text-eco-success" },
-    { icon: Award, label: d.energyScore[lang], value: "68/100", accent: "text-eco-blue" },
-    { icon: Leaf, label: d.co2[lang], value: "15 kg", accent: "text-eco-teal" },
-    { icon: Zap, label: d.wasteDetected[lang], value: "4.1 kWh", accent: "text-eco-warning" },
+    { icon: AlertTriangle, label: d.biggestWaste[lang], value: dash ? (wasteDevices[0]?.name || "N/A") : d.ac[lang], accent: "text-destructive" },
+    { icon: TrendingDown, label: d.kwhReduction[lang], value: dash ? `${dash.wasteKwh} kWh` : "38 kWh/mo", accent: "text-primary" },
+    { icon: DollarSign, label: d.savings[lang], value: dash ? `€${dash.estimatedSavings}/mo` : "€12.80/mo", accent: "text-eco-success" },
+    { icon: Award, label: d.energyScore[lang], value: dash ? `${dash.energyScore}/100` : "68/100", accent: "text-eco-blue" },
+    { icon: Leaf, label: d.co2[lang], value: dash ? `${dash.co2Reduction} kg` : "15 kg", accent: "text-eco-teal" },
+    { icon: Zap, label: d.wasteDetected[lang], value: dash ? `${dash.wasteKwh} kWh` : "4.1 kWh", accent: "text-eco-warning" },
   ];
+
+  // Use real alerts/recommendations or fallback
+  const displayRecs = recs.length > 0
+    ? recs.map((r) => ({ text: lang === "sq" ? r.text_sq : r.text_en, impact: r.impact }))
+    : d.recommendations.map((r) => ({ text: r.text[lang], impact: r.impact[lang] }));
+
+  // Weekly chart from real records
+  const records = dash?.records || [];
+  const weeklyData = records.length > 0
+    ? records.slice(-7).map((r) => ({ value: Math.round(((r.waste_kwh || 0) / (r.total_kwh || 1)) * 100), label: new Date(r.date).toLocaleDateString(lang === "sq" ? "sq" : "en", { weekday: "short" }) }))
+    : [65, 45, 70, 50, 38, 55, 42].map((h, i) => ({ value: h, label: d.days[lang][i] }));
 
   return (
     <SectionWrapper id="demo">
@@ -31,70 +63,75 @@ const DemoSection = () => {
         <span className="text-xs font-semibold uppercase tracking-wider text-primary">{d.label[lang]}</span>
         <h2 className="font-display text-3xl md:text-4xl font-bold mt-3 text-foreground">{d.title[lang]}</h2>
         <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">{d.desc[lang]}</p>
+        {!user && <p className="text-xs text-primary mt-2">{lang === "sq" ? "Kyçu për të parë të dhënat e tua" : "Sign in to see your data"}</p>}
       </div>
 
-      <div className="glass-card p-6 md:p-8 rounded-2xl">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          {dashStats.map((s, i) => (
-            <div key={i} className="dashboard-panel">
-              <s.icon className={`w-5 h-5 ${s.accent} mb-2`} />
-              <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-              <div className={`text-lg font-bold font-display ${s.accent}`}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div>
-            <h3 className="font-display font-semibold text-foreground mb-4">{d.aiRecommendations[lang]}</h3>
-            <div className="space-y-3">
-              {d.recommendations.map((r, i) => {
-                const Icon = recIcons[i];
-                return (
-                  <div key={i} className={`notification-card transition-all duration-500 ${i === activeRec ? "border-primary/30 bg-primary/5" : ""}`}>
-                    <Icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${i === activeRec ? "text-primary" : "text-muted-foreground"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground">{r.text[lang]}</p>
-                      <span className={`text-xs font-medium ${r.impact[lang] === (lang === "sq" ? "I lartë" : "High") ? "text-destructive" : r.impact[lang] === (lang === "sq" ? "Mesatar" : "Medium") ? "text-eco-warning" : "text-muted-foreground"}`}>
-                        {r.impact[lang]} {d.impactLabel[lang]}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {isLoading && user ? (
+        <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+      ) : (
+        <div className="glass-card p-6 md:p-8 rounded-2xl">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {dashStats.map((s, i) => (
+              <div key={i} className="dashboard-panel">
+                <s.icon className={`w-5 h-5 ${s.accent} mb-2`} />
+                <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
+                <div className={`text-lg font-bold font-display ${s.accent}`}>{s.value}</div>
+              </div>
+            ))}
           </div>
 
-          <div>
-            <h3 className="font-display font-semibold text-foreground mb-4">{d.topWaste[lang]}</h3>
-            <div className="space-y-4">
-              {d.wasteLabels.map((w, i) => (
-                <div key={i}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-foreground font-medium">{w[lang]}</span>
-                    <span className="text-muted-foreground">{wastePcts[i]}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${wastePcts[i]}%`, background: "var(--gradient-primary)" }} />
-                  </div>
-                </div>
-              ))}
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-display font-semibold text-foreground mb-4">{d.aiRecommendations[lang]}</h3>
+              <div className="space-y-3">
+                {displayRecs.map((r, i) => {
+                  const Icon = recIcons[i % recIcons.length];
+                  return (
+                    <div key={i} className={`notification-card transition-all duration-500 ${i === activeRec ? "border-primary/30 bg-primary/5" : ""}`}>
+                      <Icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${i === activeRec ? "text-primary" : "text-muted-foreground"}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground">{r.text}</p>
+                        <span className={`text-xs font-medium ${r.impact === "high" ? "text-destructive" : r.impact === "medium" ? "text-eco-warning" : "text-muted-foreground"}`}>
+                          {r.impact === "high" ? (lang === "sq" ? "I lartë" : "High") : r.impact === "medium" ? (lang === "sq" ? "Mesatar" : "Medium") : (lang === "sq" ? "I ulët" : "Low")} {d.impactLabel[lang]}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="mt-6 dashboard-panel">
-              <div className="text-xs text-muted-foreground mb-3">{d.weeklyTrend[lang]}</div>
-              <div className="flex items-end gap-2 h-24">
-                {[65, 45, 70, 50, 38, 55, 42].map((h, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="w-full rounded-md" style={{ height: `${h}%`, background: h > 60 ? "hsl(var(--destructive))" : "hsl(var(--primary))", opacity: 0.7 + i / 20 }} />
-                    <span className="text-[10px] text-muted-foreground">{d.days[lang][i]}</span>
+            <div>
+              <h3 className="font-display font-semibold text-foreground mb-4">{d.topWaste[lang]}</h3>
+              <div className="space-y-4">
+                {wasteLabels.slice(0, 5).map((w, i) => (
+                  <div key={i}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-foreground font-medium">{lang === "sq" ? w.sq : w.en}</span>
+                      <span className="text-muted-foreground">{wastePcts[i]}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${wastePcts[i]}%`, background: "var(--gradient-primary)" }} />
+                    </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-6 dashboard-panel">
+                <div className="text-xs text-muted-foreground mb-3">{d.weeklyTrend[lang]}</div>
+                <div className="flex items-end gap-2 h-24">
+                  {weeklyData.map((item, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full rounded-md" style={{ height: `${item.value}%`, background: item.value > 60 ? "hsl(var(--destructive))" : "hsl(var(--primary))", opacity: 0.7 + i / 20 }} />
+                      <span className="text-[10px] text-muted-foreground">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </SectionWrapper>
   );
 };
