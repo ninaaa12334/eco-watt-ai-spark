@@ -24,19 +24,20 @@ const BillAnomalyAlerts = () => {
 
   // Generate alerts from real bill data
   const dynamicAlerts = totalBills.length > 0
-    ? totalBills.filter((b) => b.is_anomaly).map((b) => ({
-        text: { sq: `${b.month} ${b.year}: ${b.anomaly_reason || "Devijim i dyshimtë"}`, en: `${b.month} ${b.year}: ${b.anomaly_reason || "Suspicious deviation"}` },
-        type: "warning" as const,
-        date: { sq: `${b.month} ${b.year}`, en: `${b.month} ${b.year}` },
-        icon: AlertTriangle,
-      })).concat(
-        totalBills.filter((b) => !b.is_anomaly).slice(-2).map((b) => ({
-          text: { sq: `${b.month} ${b.year}: Fatura duket normale`, en: `${b.month} ${b.year}: Bill looks normal` },
-          type: "ok" as const,
+    ? [
+        ...totalBills.filter((b) => b.is_anomaly).map((b) => ({
+          text: { sq: `${b.month} ${b.year}: ${b.anomaly_reason || "Devijim i dyshimtë"}`, en: `${b.month} ${b.year}: ${b.anomaly_reason || "Suspicious deviation"}` },
+          type: "warning" as const,
           date: { sq: `${b.month} ${b.year}`, en: `${b.month} ${b.year}` },
-          icon: CheckCircle,
-        }))
-      ).slice(0, 4)
+          icon: AlertTriangle as typeof AlertTriangle,
+        })),
+        ...totalBills.filter((b) => !b.is_anomaly).slice(-2).map((b) => ({
+          text: { sq: `${b.month} ${b.year}: Fatura duket normale`, en: `${b.month} ${b.year}: Bill looks normal` },
+          type: "warning" as const,
+          date: { sq: `${b.month} ${b.year}`, en: `${b.month} ${b.year}` },
+          icon: CheckCircle as typeof AlertTriangle,
+        })),
+      ].slice(0, 4)
     : null;
 
   return (
