@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "@supabase/supabase-js/cors";
+
 
 // Average wattage database for device types
 const DEVICE_WATTAGE: Record<string, { watts: number; standby: number }> = {
