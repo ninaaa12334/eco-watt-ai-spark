@@ -56,10 +56,104 @@ export async function addDevice(device: {
   power_watts: number;
   daily_usage_hours?: number;
   standby_watts?: number;
+  is_standby?: boolean;
+  photo_url?: string;
 }) {
   const { data, error } = await supabase.from("devices").insert(device).select().single();
   if (error) throw error;
   return data;
+}
+
+export async function updateDevice(id: string, updates: Record<string, unknown>) {
+  const { data, error } = await supabase.from("devices").update(updates).eq("id", id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteDevice(id: string) {
+  const { error } = await supabase.from("devices").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ─── Photo Upload ───
+export async function uploadDevicePhoto(userId: string, file: File) {
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { data, error } = await supabase.storage.from("device-photos").upload(path, file);
+  if (error) throw error;
+  const { data: urlData } = supabase.storage.from("device-photos").getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
+
+export async function uploadBillFile(userId: string, file: File) {
+  const ext = file.name.split(".").pop() || "pdf";
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { data, error } = await supabase.storage.from("bill-uploads").upload(path, file);
+  if (error) throw error;
+  return data.path;
+}
+
+// ─── AI Device Recognition ───
+export async function recognizeDevice(imageUrl?: string, imageBase64?: string) {
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recognize-device`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: JSON.stringify({ image_url: imageUrl, image_base64: imageBase64 }),
+    }
+  );
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ─── Bill Analysis ───
+export async function analyzeBill(data: {
+  total_kwh?: number;
+  day_kwh?: number;
+  night_kwh?: number;
+  total_cost?: number;
+  meter_type?: string;
+  previous_bills?: Array<{ total_kwh: number }>;
+  image_base64?: string;
+  image_url?: string;
+}) {
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-bill`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: JSON.stringify(data),
+    }
+  );
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ─── Energy Calculations ───
+export async function calculateEnergy() {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calculate-energy`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: JSON.stringify({}),
+    }
+  );
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
 
 // ─── Alerts ───
@@ -120,6 +214,25 @@ export async function fetchBills(householdId: string) {
   return data;
 }
 
+export async function addBill(bill: {
+  household_id: string;
+  month: string;
+  year: number;
+  total_kwh?: number;
+  day_kwh?: number;
+  night_kwh?: number;
+  total_cost_eur?: number;
+  day_cost_eur?: number;
+  night_cost_eur?: number;
+  is_anomaly?: boolean;
+  anomaly_reason?: string;
+  file_url?: string;
+}) {
+  const { data, error } = await supabase.from("bills").insert(bill).select().single();
+  if (error) throw error;
+  return data;
+}
+
 // ─── Tariff Checks ───
 export async function fetchTariffChecks(householdId: string) {
   const { data, error } = await supabase.from("tariff_checks").select("*").eq("household_id", householdId).order("check_date", { ascending: false });
@@ -160,15 +273,8 @@ export async function addCommunityReport(report: {
 
 // ─── Actions ───
 export async function performAction(action: string) {
-  const { data, error } = await supabase.functions.invoke("energy-actions", {
-    body: {},
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-  // We need to pass action as query param, so use fetch directly
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
-  const projectId = import.meta.env.VITE_SUPABASE_URL?.replace("https://", "").replace(".supabase.co", "");
   
   const res = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/energy-actions?action=${action}`,
@@ -188,6 +294,26 @@ export async function performAction(action: string) {
 // ─── Household ───
 export async function getOrCreateHousehold(userId: string) {
   const { data } = await supabase.from("households").select("*").eq("user_id", userId).maybeSingle();
+  return data;
+}
+
+export async function createHousehold(data: {
+  user_id: string;
+  name?: string;
+  city?: string;
+  home_size_m2?: number;
+  num_members?: number;
+  meter_type?: string;
+  monthly_bill_avg?: number;
+}) {
+  const { data: household, error } = await supabase.from("households").insert(data).select().single();
+  if (error) throw error;
+  return household;
+}
+
+export async function updateHousehold(id: string, updates: Record<string, unknown>) {
+  const { data, error } = await supabase.from("households").update(updates).eq("id", id).select().single();
+  if (error) throw error;
   return data;
 }
 
