@@ -50,10 +50,10 @@ const Navbar = () => {
           </button>
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Link to="/profile" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" />
                 {user.email?.split("@")[0]}
-              </span>
+              </Link>
               <button onClick={() => signOut()} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1">
                 <LogOut className="w-3.5 h-3.5" />
               </button>
@@ -80,6 +80,11 @@ const Navbar = () => {
             <Globe className="w-4 h-4" />
             {t.langSwitch[lang === "sq" ? "en" : "sq"]}
           </button>
+          {user ? (
+            <Link to="/profile" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground hover:text-primary py-2 flex items-center gap-2">
+              <User className="w-4 h-4" /> {lang === "sq" ? "Profili" : "Profile"}
+            </Link>
+          ) : null}
           {user ? (
             <button onClick={() => { signOut(); setMobileOpen(false); }} className="text-sm text-muted-foreground hover:text-destructive py-2 flex items-center gap-2">
               <LogOut className="w-4 h-4" /> {lang === "sq" ? "Dil" : "Sign Out"}
