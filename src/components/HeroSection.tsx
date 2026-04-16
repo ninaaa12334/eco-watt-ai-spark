@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Zap, TrendingDown, DollarSign, Shield, Camera, FileText } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import AnimatedCounter from "./AnimatedCounter";
@@ -32,7 +33,7 @@ const HeroSection = () => {
           </p>
 
           <div className="flex flex-wrap gap-4 mb-10">
-            <a href="#demo" className="btn-primary-eco"><Zap className="w-4 h-4" /> {h.tryDemo[lang]}</a>
+            <Link to="/sign-up" className="btn-primary-eco"><Zap className="w-4 h-4" /> {h.tryDemo[lang]}</Link>
             <a href="#how-it-works" className="btn-outline-eco">{h.howItWorks[lang]}</a>
           </div>
 

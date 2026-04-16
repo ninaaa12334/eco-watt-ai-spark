@@ -54,7 +54,7 @@ const SignUp = () => {
         if (error) throw error;
         toast.success(lang === "sq" ? "Llogaria u krijua me sukses!" : "Account created successfully!");
       }
-      navigate("/");
+      navigate("/profile");
     } catch (err: any) {
       toast.error(err.message || "Error");
     }
