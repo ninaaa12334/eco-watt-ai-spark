@@ -11,6 +11,7 @@ import {
   useAddTariffCheck,
 } from "@/hooks/useEnergy";
 import { FileSearch, Upload, Sun, Moon, AlertTriangle, CheckCircle, Loader2, Clock } from "lucide-react";
+import { fileToResizedBase64 } from "@/lib/imageResize";
 import { toast } from "sonner";
 
 const BillCheckerSection = () => {
@@ -48,30 +49,55 @@ const BillCheckerSection = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadedFile(file);
+    e.target.value = "";
 
-    // If it's an image, try AI OCR analysis
-    if (file.type.startsWith("image/")) {
-      setAnalyzing(true);
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const base64 = (ev.target?.result as string).split(",")[1];
-        try {
-          const previousBills = bills?.map((b) => ({ total_kwh: b.total_kwh || 0 })) || [];
-          const result = await analyzeMut.mutateAsync({
-            image_base64: base64,
-            meter_type: "dual",
-            previous_bills: previousBills,
-          });
-          setAnalysisResult(result);
-          toast.success(lang === "sq" ? "Fatura u analizua" : "Bill analyzed");
-        } catch (err: any) {
-          toast.error(err.message);
-        }
-        setAnalyzing(false);
-      };
-      reader.readAsDataURL(file);
+    if (!file.type.startsWith("image/")) {
+      toast.error(
+        lang === "sq"
+          ? "Për momentin lexohen vetëm fotografitë e faturës (JPG/PNG). Bëni një foto ose screenshot të faturës."
+          : "Only bill photos (JPG/PNG) can be read for now. Take a photo or screenshot of the bill."
+      );
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      const base64 = await fileToResizedBase64(file);
+      const previousBills = bills?.map((b) => ({ total_kwh: b.total_kwh || 0 })) || [];
+      const result = await analyzeMut.mutateAsync({
+        image_base64: base64,
+        meter_type: "dual",
+        previous_bills: previousBills,
+      });
+
+      if (!result?.extracted_data?.total_kwh) {
+        setAnalysisResult(null);
+        toast.error(
+          lang === "sq"
+            ? "Nuk u lexuan dot të dhënat nga fotografia. Provoni një foto më të qartë ose vendosini manualisht."
+            : "Could not read the numbers from that photo. Try a clearer photo or enter them manually."
+        );
+        return;
+      }
+
+      setAnalysisResult(result);
+      setManualForm((p) => ({
+        ...p,
+        total_kwh: String(result.extracted_data.total_kwh ?? ""),
+        day_kwh: String(result.extracted_data.day_kwh ?? ""),
+        night_kwh: String(result.extracted_data.night_kwh ?? ""),
+        total_cost: String(result.extracted_data.total_cost ?? ""),
+      }));
+      toast.success(lang === "sq" ? "Fatura u analizua" : "Bill analyzed");
+    } catch (err: any) {
+      toast.error(
+        (lang === "sq" ? "Analiza dështoi: " : "Analysis failed: ") + (err?.message || "")
+      );
+    } finally {
+      setAnalyzing(false);
     }
   };
+
 
   const handleManualAnalysis = async () => {
     if (!manualForm.total_kwh) {
