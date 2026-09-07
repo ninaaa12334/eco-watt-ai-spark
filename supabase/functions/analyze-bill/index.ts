@@ -31,8 +31,22 @@ Deno.serve(async (req) => {
 
     // If image is provided, try AI OCR
     let extracted: any = null;
-    if ((image_base64 || image_url) && LOVABLE_API_KEY) {
-      extracted = await extractBillWithAI(image_base64, image_url);
+    let ocrError: string | null = null;
+    if (image_base64 || image_url) {
+      if (!LOVABLE_API_KEY) {
+        return new Response(JSON.stringify({ error: "AI service is not configured." }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const ocr = await extractBillWithAI(image_base64, image_url);
+      extracted = ocr.data;
+      ocrError = ocr.error;
+
+      if (!extracted?.total_kwh && !total_kwh) {
+        return new Response(JSON.stringify({
+          error: ocrError || "Could not read any consumption values from this image.",
+        }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     const kwh = extracted?.total_kwh || total_kwh || 0;
@@ -40,6 +54,13 @@ Deno.serve(async (req) => {
     const nKwh = extracted?.night_kwh || night_kwh || kwh * 0.35;
     const reportedCost = extracted?.total_cost || total_cost || 0;
     const mType = meter_type || "dual";
+
+    if (!kwh) {
+      return new Response(JSON.stringify({ error: "No consumption data provided." }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
 
     // Calculate expected cost
     let expectedCost = TARIFFS.fixed_monthly;
@@ -164,13 +185,23 @@ async function extractBillWithAI(base64?: string, url?: string) {
       }),
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      const detail = await response.text();
+      console.error("AI OCR failed", response.status, detail);
+      if (response.status === 429) return { data: null, error: "AI service is busy right now. Please try again in a moment." };
+      if (response.status === 402 || response.status === 403) return { data: null, error: "AI credits are unavailable for this workspace." };
+      return { data: null, error: "The bill image could not be processed." };
+    }
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
-    return null;
-  } catch { return null; }
+    if (toolCall?.function?.arguments) return { data: JSON.parse(toolCall.function.arguments), error: null };
+    return { data: null, error: "No bill values were found in this image." };
+  } catch (e) {
+    console.error("AI OCR exception", e);
+    return { data: null, error: "The bill image could not be processed." };
+  }
 }
+
 
 function generateBillRecommendations(status: string, anomalies: string[], ratio: number, deviation: number) {
   const recs: { text_sq: string; text_en: string; priority: string }[] = [];
